@@ -2,10 +2,8 @@ import uuid
 from src.common.database import Database
 from src.common.utils import Utils
 import src.models.users.errors as UserErrors
-import src.models.users.constants as UserConstants
+import src.models.users.constants as UserContants
 from src.models.alerts.alert import Alert
-
-__author__ = 'jslvtr'
 
 
 class User(object):
@@ -17,58 +15,56 @@ class User(object):
     def __repr__(self):
         return "<User {}>".format(self.email)
 
-    @classmethod
-    def find_by_email(cls, email):
-        return cls(**Database.find_one(UserConstants.COLLECTION, {'email': email}))
-
     @staticmethod
     def is_login_valid(email, password):
         """
-        This method verifies that an e-mail/password combo (as sent by the site forms) is valid or not.
-        Checks that the e-mail exists, and that the password associated to that e-mail is correct.
-        :param email: The user's email
-        :param password: A sha512 hashed password
-        :return: True if valid, False otherwise
+        This method verifies that an email /password is valid or not
+        check email existes and that password associated to that email is correct
+        :param email: The user's email str
+        :param password: A sha512 hased password
+        :return: True if vaild Flase otherwise
         """
-        user_data = Database.find_one("users", {"email": email})  # Password in sha512 -> pbkdf2_sha512
+        user_data = Database.find_one(UserContants.COLLECTION, {"email": email})
         if user_data is None:
-            # Tell the user that their e-mail doesn't exist
-            raise UserErrors.UserNotExistsError("Your user does not exist.")
+            raise UserErrors.UserNotExistsError("User doesn't exist")
         if not Utils.check_hashed_password(password, user_data['password']):
-            # Tell the user that their password is wrong
-            raise UserErrors.IncorrectPasswordError("Your password was wrong.")
+            raise UserErrors.IncorrectPasswordError("Password incorrect")
 
         return True
 
     @staticmethod
     def register_user(email, password):
         """
-        This method registers a user using e-mail and password.
-        The password already comes hashed as sha-512.
-        :param email: user's e-mail (might be invalid)
-        :param password: sha512-hashed password
-        :return: True if registered successfully, or False otherwise (exceptions can also be raised)
+        This method registers user using email and password
+        The password already comes hashed as sha-512
+        :param email:  user's email
+        :param password:
+        :return:
         """
-        user_data = Database.find_one("users", {"email": email})
-
+        user_data = Database.find_one(UserContants.COLLECTION, {"email": email})
         if user_data is not None:
-            raise UserErrors.UserAlreadyRegisteredError("The e-mail you used to register already exists.")
+            # tell user they are already register
+            raise UserErrors.UserAlreadyRegisteredError("The email you used already exist")
         if not Utils.email_is_valid(email):
-            raise UserErrors.InvalidEmailError("The e-mail does not have the right format.")
-
+            # tell user that their e-mail is not constructed properly
+            raise UserErrors.InvalidEmailError("The email does not have right format")
         User(email, Utils.hash_password(password)).save_to_db()
 
         return True
 
     def save_to_db(self):
-        Database.insert("users", self.json())
+        Database.insert(UserContants.COLLECTION, self.json())
 
     def json(self):
         return {
-            "_id": self._id,
-            "email": self.email,
-            "password": self.password
+            '_id': self._id,
+            'email': self.email,
+            'password': self.password
         }
+
+    @classmethod
+    def find_by_email(cls, email):
+        return cls(**Database.find_one(UserContants.COLLECTION, {'email': email}))
 
     def get_alerts(self):
         return Alert.find_by_user_email(self.email)
