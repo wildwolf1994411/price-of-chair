@@ -1,6 +1,7 @@
 # Pricing Service
 
-Forked version by Qi Chen
+Forked version by Qi Chen this is a python 2.7 version
+
 
 This is an application built to allow the periodic scanning of online webstores, to notify users of changes in prices of items they select.
 
